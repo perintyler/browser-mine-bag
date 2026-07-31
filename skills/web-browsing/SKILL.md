@@ -83,6 +83,9 @@ Reach for them only when no structured tool covers the task.
 | Wait | `wait_for` (`text`) |
 | Screenshot | `take_screenshot` |
 | Tabs | `list_pages`, `new_page`, `select_page`, `close_page` |
+
+`list_pages` prints tabs as `1:`, `2:`, … but `pageId` is a **number**, not the
+string form — `{"pageId": 51}`, not `{"pageId": "51"}`, which fails validation.
 | Console / network | `list_console_messages`, `list_network_requests` |
 | Performance | `performance_start_trace`, `lighthouse_audit` |
 
@@ -114,4 +117,7 @@ back when done. If the user just wants to *see* what happened, prefer
 - First call in a mode is slow: `npx` fetches and caches the pinned server.
 - Close the browser when you're done in `browser` mode.
 - In `browser-mine` you are sharing a browser with a human. Don't close their
-  tabs, and treat anything you can see there as sensitive.
+  tabs, and treat anything you can see there as sensitive — `list_pages`
+  returns every open tab, and in practice that means their email, dashboards,
+  and work systems. Open your own tab with `new_page` (`background: true`
+  keeps focus where it was), and close only that one when you're done.
