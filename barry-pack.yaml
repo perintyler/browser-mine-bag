@@ -1,0 +1,28 @@
+manifestVersion: 1
+name: browser-mine
+description: Drive my real Chrome with my existing logins and cookies
+
+# chrome-devtools-mcp attaches to the already-running Chrome, so pages keep the
+# user's real cookies and sessions. Requires a one-time opt-in at
+# chrome://inspect/#remote-debugging — see skills/real-chrome-setup.
+#
+# Its tool vocabulary is entirely different from @playwright/mcp
+# (navigate_page/take_snapshot/uid vs browser_navigate/browser_snapshot/target),
+# so it lives in its own pack and its own trait.
+mcp-servers:
+  browser-mine:
+    command: npx
+    args: ["-y", "chrome-devtools-mcp@1.6.0", "--autoConnect"]
+
+dependencies:
+  - name: npx
+    reason: runs the browser MCP server
+  - name: node
+    reason: required by npx
+
+traits:
+  browser-mine:
+    description: Drive my real Chrome with my existing logins and cookies
+    access: readwrite
+    namespaces: [browser-mine]
+    skills: [web-browsing, real-chrome-setup]
