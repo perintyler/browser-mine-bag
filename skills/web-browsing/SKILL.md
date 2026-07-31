@@ -92,6 +92,23 @@ in the same call instead of a separate `take_snapshot` round trip.
 This mode drives the user's actual browser. See the `real-chrome-setup` skill
 for the one-time opt-in and the cautions that come with it.
 
+## Watching the browser work (headed mode)
+
+There is no headed *trait*. Both Playwright modes would export the same 24
+`browser_*` tool names, and session filtering matches bare names, so a second
+Playwright server would leak into any session traited for the first — the model
+would see every tool twice, unable to tell which browser it was driving.
+
+So headed is a config change, not a mode to switch into mid-session. Drop
+`--headless` from the `browser` server args in
+`~/repos/packs/browser/barry-pack.yaml`, then restart MCP:
+
+    launchctl kickstart -k gui/$UID/com.barry.mcp.barry
+
+New sessions get a visible window; everything else is identical. Put the flag
+back when done. If the user just wants to *see* what happened, prefer
+`browser_take_screenshot` — it needs no restart.
+
 ## Cautions
 
 - First call in a mode is slow: `npx` fetches and caches the pinned server.
