@@ -75,11 +75,28 @@ close or disturb the user's windows.
   listener, so `lsof` showing 9222 open proves nothing. Only the `curl` above
   returning 200 does.
 
-  If the toggle reads as enabled and 404s persist, stop retrying and look
-  further out: enterprise policy, a restricted profile, or a change in how the
-  installed Chrome gates this. Nothing on the Barry side can affect it — the
-  `browser` (headless) pack keeps working throughout, which is the quickest way
-  to confirm the fault is Chrome's and not Barry's.
+  If the toggle reads as enabled and 404s persist, stop retrying. Investigated
+  on Chrome 151.0.7922.71 and ruled out the usual suspects:
+
+  - **Not enterprise policy** — no MDM profile, nothing in
+    `/Library/Managed Preferences`.
+  - **The toggle really is set** — `~/Library/Application Support/Google/
+    Chrome/Local State` shows `devtools.remote_debugging.user-enabled = true`,
+    which is why the port opens with no launch flags.
+  - **The DevTools server is up** — it answers with a proper `404` plus
+    headers, not a refused connection, so it is serving and deliberately
+    exposing no targets.
+  - **Restarting does not help** — a fresh process re-opens 9222 from the
+    persisted toggle and still 404s.
+
+  So target discovery is gated behind something the persisted toggle alone does
+  not satisfy on this build. If you need the real profile and hit this, the
+  `--extension` route of `@playwright/mcp` is the documented alternative; it
+  bridges through a browser extension rather than the DevTools port.
+
+  Nothing on the Barry side affects any of this — the `browser` (headless) pack
+  keeps working throughout, which is the quickest way to confirm the fault is
+  Chrome's.
 - **Tools not found** — the session lacks the `browser-mine` trait, or is using
   Playwright's `browser_*` names. This mode's tools are `navigate_page`,
   `take_snapshot`, `click`, and friends. See the `web-browsing` skill.
