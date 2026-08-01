@@ -12,6 +12,14 @@ exposes browser content, and `--autoConnect` can see every open tab.
 Use this only when the task genuinely needs the user's logged-in state.
 Otherwise prefer the `browser` (headless) pack, which has none of this exposure.
 
+## Concurrent sessions share the real Chrome
+
+`session-scoped: true` gives each Barry session its own server process, but every
+process attaches to the same real Chrome — that is the whole point of the mode,
+so tabs are genuinely shared. `--experimentalPageIdRouting` exposes `pageId` on
+page-scoped tools so a session can pin the tab it is working on instead of
+relying on which one happens to be selected.
+
 ## Different tool names from the Playwright packs
 
 This server's vocabulary is `navigate_page`, `take_snapshot`, `click`/`fill`

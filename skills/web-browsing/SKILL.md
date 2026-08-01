@@ -86,6 +86,13 @@ Reach for them only when no structured tool covers the task.
 
 `list_pages` prints tabs as `1:`, `2:`, … but `pageId` is a **number**, not the
 string form — `{"pageId": 51}`, not `{"pageId": "51"}`, which fails validation.
+
+Page-scoped tools (`take_snapshot`, `navigate_page`, `click`, …) also accept
+`pageId`. Pass it to pin the tab you are working on. This matters here in a way
+it does not for the headless pack: `browser-mine` attaches to the user's single
+real Chrome, so concurrent sessions genuinely do share the tab list, and
+whichever tab is "selected" can change under you. Addressing your tab by
+`pageId` is the way to stay put.
 | Console / network | `list_console_messages`, `list_network_requests` |
 | Performance | `performance_start_trace`, `lighthouse_audit` |
 

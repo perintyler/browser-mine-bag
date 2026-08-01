@@ -24,6 +24,11 @@ mcp-servers:
       # This mode drives the real, logged-in browser, so network traffic
       # carries live auth headers. Redact them before they reach the model.
       - "--redactNetworkHeaders"
+      # Page-scoped tools take a pageId so concurrent sessions can each pin
+      # their own tab. session-scoped gives separate server processes, but they
+      # all attach to the one real Chrome, so the tab is still shared without
+      # this.
+      - "--experimentalPageIdRouting"
     # Each session gets its own connection: this drives a real browser, and a
     # shared connection would let concurrent sessions steer each other's tabs.
     session-scoped: true
