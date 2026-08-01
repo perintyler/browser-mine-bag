@@ -86,13 +86,6 @@ Reach for them only when no structured tool covers the task.
 
 `list_pages` prints tabs as `1:`, `2:`, … but `pageId` is a **number**, not the
 string form — `{"pageId": 51}`, not `{"pageId": "51"}`, which fails validation.
-
-Page-scoped tools (`take_snapshot`, `navigate_page`, `click`, …) also accept
-`pageId`. Pass it to pin the tab you are working on. This matters here in a way
-it does not for the headless pack: `browser-mine` attaches to the user's single
-real Chrome, so concurrent sessions genuinely do share the tab list, and
-whichever tab is "selected" can change under you. Addressing your tab by
-`pageId` is the way to stay put.
 | Console / network | `list_console_messages`, `list_network_requests` |
 | Performance | `performance_start_trace`, `lighthouse_audit` |
 
@@ -140,6 +133,29 @@ pack's `mcp-servers` entry.
 
 Your browser still goes away when the session does, so treat anything you open
 as scoped to this session.
+
+## Recording a video
+
+There is no recording tool. Playwright records per browser *context*, so make a
+recorded one through `browser_run_code_unsafe` and drive that page:
+
+```js
+async (page) => {
+  const browser = page.context().browser();
+  const rec = await browser.newContext({
+    recordVideo: { dir: "/tmp/out", size: { width: 1280, height: 720 } },
+  });
+  const p = await rec.newPage();
+  await p.goto("https://example.com");
+  // ...drive p...
+  await p.close();
+  await rec.close();   // the file is only flushed on context close
+  return "recorded";
+}
+```
+
+Sizes: 854×480, 1280×720, 1920×1080. The video lands in `dir` as `.webm`, and
+appears only after `rec.close()` — checking earlier shows an empty directory.
 
 ## Cautions
 
