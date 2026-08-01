@@ -51,6 +51,22 @@ close or disturb the user's windows.
   profile. It fell back to a fresh context; re-check the opt-in above.
 - **Connection refused** — Chrome isn't running. It must already be open;
   this mode attaches, it does not launch.
+- **Tool calls hang with no error** — the opt-in has lapsed. This is the most
+  confusing failure, because nothing reports a problem: `initialize` succeeds,
+  the pack connects, and then the first real call simply never returns. It
+  reads like a slow page.
+
+  Confirm it in one command:
+
+      curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9222/json
+
+  `200` means remote debugging is live. **`404` means the opt-in is off** —
+  Chrome still listens on the port, but refuses every DevTools endpoint, so
+  the server waits forever. Connection-refused instead means Chrome is closed.
+
+  Re-enable it at `chrome://inspect/#remote-debugging`. Observed lapsing
+  *without* a Chrome restart, so treat it as something to re-check whenever
+  this mode stops responding, not a one-time setup step.
 - **Tools not found** — the session lacks the `browser-mine` trait, or is using
   Playwright's `browser_*` names. This mode's tools are `navigate_page`,
   `take_snapshot`, `click`, and friends. See the `web-browsing` skill.
