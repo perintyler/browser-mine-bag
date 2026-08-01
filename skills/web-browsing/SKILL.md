@@ -63,7 +63,17 @@ Prefer `browser_find` over `browser_snapshot` on large pages — it returns just
 the matching nodes with their refs, instead of the whole tree.
 
 Prefer `browser_fill_form` over field-by-field typing on multi-field forms: one
-call, and it handles checkboxes, radios and comboboxes by `type`.
+call, and it handles checkboxes, radios and comboboxes by `type`. Verified in
+one call across a textbox, a combobox, a checkbox and a radio; pass `"true"` as
+the value for checkbox and radio.
+
+**File uploads are sandboxed.** `browser_file_upload` rejects paths outside the
+server's allowed roots — in Barry that is `servers/mcp/.playwright-mcp` and
+`servers/mcp` — with `File access denied: ... is outside allowed roots`. A file
+in `/tmp` will NOT upload. Copy it into `.playwright-mcp/` first, or start the
+server with `--allow-unrestricted-paths` if that is genuinely wanted. The click
+that opens the chooser and the `browser_file_upload` that answers it are two
+separate calls.
 
 `browser_run_code_unsafe` and `browser_evaluate` execute arbitrary JavaScript.
 Reach for them only when no structured tool covers the task.
