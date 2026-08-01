@@ -12,7 +12,18 @@ description: Drive my real Chrome with my existing logins and cookies
 mcp-servers:
   browser-mine:
     command: npx
-    args: ["-y", "chrome-devtools-mcp@1.6.0", "--autoConnect"]
+    args:
+      - "-y"
+      - "chrome-devtools-mcp@1.6.0"
+      - "--autoConnect"
+      # Screenshots are the most expensive thing this server returns. WebP is
+      # ~3-5x smaller than PNG and the cap bounds a full-page capture, both of
+      # which only affect calls that do not request a format themselves.
+      - "--screenshotFormat=webp"
+      - "--screenshotMaxWidth=1400"
+      # This mode drives the real, logged-in browser, so network traffic
+      # carries live auth headers. Redact them before they reach the model.
+      - "--redactNetworkHeaders"
 
 dependencies:
   - name: npx

@@ -112,6 +112,35 @@ New sessions get a visible window; everything else is identical. Put the flag
 back when done. If the user just wants to *see* what happened, prefer
 `browser_take_screenshot` — it needs no restart.
 
+To confirm which mode is live, ask the page rather than hunting for a process
+(Playwright launches and tears the browser down inside a single call, so it is
+rarely visible in `ps`):
+
+    browser_evaluate  () => navigator.userAgent
+
+Headless Chromium reports a `HeadlessChrome` token; headed does not.
+
+## One browser, shared by every session
+
+**Barry sessions do not get their own browser.** Barry connects each pack once
+and pools that connection, so every session with a browsing trait drives the
+same browser context — and the same tab.
+
+Verified: session A navigated to a URL and set `window.__barry_marker`; an
+independent session B read back both A's URL and the marker.
+
+Practical consequences:
+
+- Another session can navigate the page out from under you between two of your
+  calls. If a snapshot looks like a page you never opened, that is why.
+- Re-snapshot before acting when a sequence spans several calls; do not trust a
+  ref you obtained a while ago.
+- Anything you type or log in to is visible to concurrent sessions.
+
+This is a property of Barry's pack pooling, not of the upstream server, so no
+server flag changes it. `@playwright/mcp` isolates per *client connection*, and
+Barry is a single client. Treat the browser as shared state.
+
 ## Cautions
 
 - First call in a mode is slow: `npx` fetches and caches the pinned server.
