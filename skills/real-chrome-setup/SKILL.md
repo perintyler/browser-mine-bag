@@ -67,6 +67,19 @@ close or disturb the user's windows.
   Re-enable it at `chrome://inspect/#remote-debugging`. Observed lapsing
   *without* a Chrome restart, so treat it as something to re-check whenever
   this mode stops responding, not a one-time setup step.
+
+  **A restart alone does not fix it, and an open port does not mean it works.**
+  Observed: after quitting and reopening Chrome, the new process re-opened
+  9222 straight away — Chrome remembers the *intent* — while every DevTools
+  endpoint still returned 404. The authorization is separate from the
+  listener, so `lsof` showing 9222 open proves nothing. Only the `curl` above
+  returning 200 does.
+
+  If the toggle reads as enabled and 404s persist, stop retrying and look
+  further out: enterprise policy, a restricted profile, or a change in how the
+  installed Chrome gates this. Nothing on the Barry side can affect it — the
+  `browser` (headless) pack keeps working throughout, which is the quickest way
+  to confirm the fault is Chrome's and not Barry's.
 - **Tools not found** — the session lacks the `browser-mine` trait, or is using
   Playwright's `browser_*` names. This mode's tools are `navigate_page`,
   `take_snapshot`, `click`, and friends. See the `web-browsing` skill.
