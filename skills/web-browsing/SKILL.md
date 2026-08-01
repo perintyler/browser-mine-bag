@@ -120,26 +120,19 @@ rarely visible in `ps`):
 
 Headless Chromium reports a `HeadlessChrome` token; headed does not.
 
-## One browser, shared by every session
+## Each session gets its own browser
 
-**Barry sessions do not get their own browser.** Barry connects each pack once
-and pools that connection, so every session with a browsing trait drives the
-same browser context — and the same tab.
+Sessions do not share a browser. The pack is `session-scoped`, so Barry gives
+every session its own connection and therefore its own browser process and tab.
 
-Verified: session A navigated to a URL and set `window.__barry_marker`; an
-independent session B read back both A's URL and the marker.
+This was not always true: pack connections are pooled process-wide by default,
+and browsing sessions used to share a single tab — one session could navigate
+the page out from under another mid-task. If you are on an older Barry and see
+a page you never opened, that is why; the fix is `session-scoped: true` on the
+pack's `mcp-servers` entry.
 
-Practical consequences:
-
-- Another session can navigate the page out from under you between two of your
-  calls. If a snapshot looks like a page you never opened, that is why.
-- Re-snapshot before acting when a sequence spans several calls; do not trust a
-  ref you obtained a while ago.
-- Anything you type or log in to is visible to concurrent sessions.
-
-This is a property of Barry's pack pooling, not of the upstream server, so no
-server flag changes it. `@playwright/mcp` isolates per *client connection*, and
-Barry is a single client. Treat the browser as shared state.
+Your browser still goes away when the session does, so treat anything you open
+as scoped to this session.
 
 ## Cautions
 
