@@ -8,7 +8,7 @@ description: Drive my real Chrome with my existing logins and cookies
 #
 # Its tool vocabulary is entirely different from @playwright/mcp
 # (navigate_page/take_snapshot/uid vs browser_navigate/browser_snapshot/target),
-# so it lives in its own pack and its own trait.
+# so it lives in its own block and its own trait.
 mcp-servers:
   browser-mine:
     command: npx
