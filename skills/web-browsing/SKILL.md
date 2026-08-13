@@ -114,7 +114,7 @@ would see every tool twice, unable to tell which browser it was driving.
 
 So headed is a config change, not a mode to switch into mid-session. Drop
 `--headless` from the `browser` server args in
-`~/repos/packs/browser/barry-pack.yaml`, then restart MCP:
+`~/repos/bags/browser/bag.yaml`, then restart MCP:
 
     launchctl kickstart -k gui/$UID/com.barry.mcp.barry
 
