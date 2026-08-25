@@ -1,12 +1,17 @@
 version: 1
 name: real-chrome-setup
-description: One-time setup to let Barry drive the user's real Chrome with their existing logins. Use when browser-mine tools fail to connect, or when the user wants Barry to browse as themselves for the first time.
+description: Setup and troubleshooting for driving the user's real Chrome with their existing logins. Use when browser-mine tool calls error or hang, when pages render logged-out, or when the user wants Barry to browse as themselves for the first time. Read the troubleshooting section before concluding this mode is blocked — port 9222 is NOT the health check.
 prompt: |-
   # Driving the real Chrome
 
   The `browser-mine` mode attaches to the user's already-running Chrome, so pages
-  load with their real cookies and sessions. That requires a one-time opt-in
-  inside Chrome. Until it's granted, `browser-mine` tools will fail to connect.
+  load with their real cookies and sessions.
+
+  **Check whether it already works before setting anything up.** Call
+  `list_pages`: if it returns the user's tabs, this mode is working and there is
+  nothing to do here. Observed working with no opt-in visible on the DevTools
+  port at all, so do not infer a broken state from port checks — see the
+  troubleshooting section, which exists mostly to stop that inference.
 
   ## Why there is no way around this
 
@@ -16,11 +21,12 @@ prompt: |-
   you a *fresh* profile, which is exactly the logged-out browser the clean modes
   already provide.
 
-  So the only routes to the real profile are Chrome's own opt-in
-  (`chrome-devtools-mcp --autoConnect`, Chrome 144+, what this pack uses) or the
-  `@playwright/mcp --extension` bridge.
+  So the routes to the real profile are `chrome-devtools-mcp --autoConnect`
+  (Chrome 144+, what this bag uses) or the `@playwright/mcp --extension` bridge.
+  `--autoConnect` attaches over its own channel rather than the 9222 DevTools
+  HTTP endpoint, which is why its health is invisible to `curl` on that port.
 
-  ## The opt-in (user does this once)
+  ## The opt-in (only if `list_pages` does not already work)
 
   1. In Chrome, open `chrome://inspect/#remote-debugging`.
   2. Enable remote debugging.
@@ -46,56 +52,51 @@ prompt: |-
 
   ## When it isn't working
 
-  - **Pages render logged-out** — `--autoConnect` didn't attach to the real
-    profile. It fell back to a fresh context; re-check the opt-in above.
+  - **Do NOT diagnose this mode with `curl 127.0.0.1:9222`.** That check is
+    worse than useless here: it reports a problem when there is none, and it
+    has twice sent sessions into a dead end that ended in "stop retrying" while
+    this mode was working the whole time.
+
+    Verified 2026-08-25 on Chrome 151.0.7922.174: `9222/json` returned **404**
+    while `list_pages` returned the real tab list in 3s, and
+    `github.com/settings/profile` loaded as **"Your profile"** — i.e. the real
+    logged-in profile, attached, over a 404 port.
+
+    `chrome-devtools-mcp --autoConnect` does not use the 9222 DevTools HTTP
+    endpoint. It attaches over its own channel, so that port's status says
+    nothing about whether this mode works. A 404 there is the normal resting
+    state, not a fault.
+
+    The only check that can actually fail correctly is calling a tool:
+
+        list_pages
+
+    If that returns pages, this mode is working — whatever port 9222 says. If
+    it errors or hangs, then start diagnosing.
+
+  - **Pages render logged-out** — `--autoConnect` fell back to a fresh context
+    instead of the real profile. This is the one symptom that genuinely means
+    the attach is wrong; `list_pages` returning the user's real tabs rules it
+    out. Confirm against a page that requires login rather than by eye.
   - **Connection refused** — Chrome isn't running. It must already be open;
     this mode attaches, it does not launch.
-  - **Tool calls hang with no error** — the opt-in has lapsed. This is the most
-    confusing failure, because nothing reports a problem: `initialize` succeeds,
-    the pack connects, and then the first real call simply never returns. It
-    reads like a slow page.
+  - **Tool calls hang with no error** — rare, and *not* diagnosable via 9222
+    (see above). `initialize` succeeding tells you nothing either: the server
+    registers all 29 tools without touching Chrome, so a healthy tool list is
+    not evidence of an attach. Confirm with `list_pages`; if it hangs, restart
+    the session so the pack reconnects.
 
-    Confirm it in one command:
+    Historical note, kept so it is not re-investigated: a long run of 404s on
+    this port was once read as "target discovery is gated on Chrome 151" and
+    marked unresolved. That conclusion was wrong — the port was never the
+    mechanism. Ruled out along the way, all still true and all irrelevant to
+    whether this mode works: no MDM policy, the `Local State` toggle really is
+    set (`devtools.remote_debugging.user-enabled = true`), the DevTools server
+    really is up and serving 404s, and a genuinely cold Chrome (verified fresh
+    pid, updated build) still 404s.
 
-        curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9222/json
-
-    `200` means remote debugging is live. **`404` means the opt-in is off** —
-    Chrome still listens on the port, but refuses every DevTools endpoint, so
-    the server waits forever. Connection-refused instead means Chrome is closed.
-
-    Re-enable it at `chrome://inspect/#remote-debugging`. Observed lapsing
-    *without* a Chrome restart, so treat it as something to re-check whenever
-    this mode stops responding, not a one-time setup step.
-
-    **A restart alone does not fix it, and an open port does not mean it works.**
-    Observed: after quitting and reopening Chrome, the new process re-opened
-    9222 straight away — Chrome remembers the *intent* — while every DevTools
-    endpoint still returned 404. The authorization is separate from the
-    listener, so `lsof` showing 9222 open proves nothing. Only the `curl` above
-    returning 200 does.
-
-    If the toggle reads as enabled and 404s persist, stop retrying. Investigated
-    on Chrome 151.0.7922.71 and ruled out the usual suspects:
-
-    - **Not enterprise policy** — no MDM profile, nothing in
-      `/Library/Managed Preferences`.
-    - **The toggle really is set** — `~/Library/Application Support/Google/
-      Chrome/Local State` shows `devtools.remote_debugging.user-enabled = true`,
-      which is why the port opens with no launch flags.
-    - **The DevTools server is up** — it answers with a proper `404` plus
-      headers, not a refused connection, so it is serving and deliberately
-      exposing no targets.
-    - **Restarting does not help** — a fresh process re-opens 9222 from the
-      persisted toggle and still 404s.
-
-    So target discovery is gated behind something the persisted toggle alone does
-    not satisfy on this build. If you need the real profile and hit this, the
-    `--extension` route of `@playwright/mcp` is the documented alternative; it
-    bridges through a browser extension rather than the DevTools port.
-
-    Nothing on the Barry side affects any of this — the `browser` (headless) pack
-    keeps working throughout, which is the quickest way to confirm the fault is
-    Chrome's.
+    Nothing on the Barry side affects any of this — the `browser` (headless) bag
+    keeps working throughout.
   - **Tools not found** — the session lacks the `browser-mine` trait, or is using
     Playwright's `browser_*` names. This mode's tools are `navigate_page`,
     `take_snapshot`, `click`, and friends. See the `web-browsing` skill.
