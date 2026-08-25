@@ -1,4 +1,4 @@
-name: browser-mine
+name: chrome-browsing
 description: Drive my real Chrome with my existing logins and cookies
 
 # chrome-devtools-mcp attaches to the already-running Chrome, so pages keep the
@@ -9,7 +9,7 @@ description: Drive my real Chrome with my existing logins and cookies
 # (navigate_page/take_snapshot/uid vs browser_navigate/browser_snapshot/target),
 # so it lives in its own bag and its own trait.
 mcp-servers:
-  browser-mine:
+  chrome-browsing:
     command: npx
     args:
       - "-y"
@@ -39,8 +39,8 @@ dependencies:
     reason: required by npx
 
 traits:
-  browser-mine:
+  chrome-browsing:
     description: Drive my real Chrome with my existing logins and cookies
     access: readwrite
-    namespaces: [browser-mine]
+    namespaces: [chrome-browsing]
     skills: [web-browsing, real-chrome-setup]
